@@ -54,17 +54,22 @@ sqrt:
     la t0, number #endereco do numero
     lw t1, 0(t0) #valor do numero
 
-    lw t2, t0 #palpite
-    div t5, t1, t2 #divisao do numero pelo palpite
+    lw t2, 0(t0) #palpite
     li t4, 2 #divisor
     
     
-
     li t3, 0 #iteração
+    li t6, 9 #fim da iteraçao
     loop:
-        div t1, t1, t4
+        div t2, t2, t4 #divide o palpite por 2
+        div t5, t1, t2 #divide o numero pelo palpite
+        add t2, t2, t5 #soma ao palpite o palpite anterior + o numero/palpite
+        div t2, t2, t4 #divide por 2
+        addi t3, 1 #itera
 
+    blt t3, t6, loop
 
+    sw t2, 0(t0) #salv ao novo valor
 
 
 .globl _start
