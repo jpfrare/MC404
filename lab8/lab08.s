@@ -3,6 +3,7 @@
 .bss 
     image: .skip 263000
     dimentions: .word 0, 0 #largura, altura
+    char: .skip 1
 
 .text
 .globl _start
@@ -52,31 +53,6 @@ write:
     ecall
 
 
-strToint:
-    #a0 memória do início do número na string
-    #a1 quantidade de dígitos a serem lidos
-    mv t0, a0 #endereço do número -> t0
-    li a0, 0 #resultado
-    li t1, 10
-
-
-    1:
-        beq a1, zero 1f #vai pra 1f se 0 >= a1
-        lb t2, 0(t0) #carrega o byte da memória
-        addi t2, t2, -'0' #converte para int
-        mul a0, a0, t1  #a0 = *= 10
-        add a0, a0, t2  #a0 += 10
-
-
-        addi a1, a1, -1 #iteração
-        addi t0, t0, 1 #memória
-        j 1b
-    1:
-
-    #a0 ta com o número final
-    ret 
-
-
 _start:
     la a0, inputFile
     jal open
@@ -84,7 +60,6 @@ _start:
 
     mv s0, a0 #s0 -> fd
     la s1, image #s1 -> &image
-    la s2, number #s2 -> &header
     la s3, dimentions #s3 -> &dimentions
 
     HeaderRead:
@@ -95,36 +70,49 @@ _start:
         li a2, 3 #tamanho do lixo
         ecall #leu o lixo, vai começar o número agora
 
+        la a1, char #caractere a ser lido
         li a2, 1 #numero de dígitos a serem lidos
-        mv a1, s2 #t1 = &number
 
         li t0, ' ' #comparador 1
         li t1, 10 #multiplicador
 
         #t2 = caractere a ser lido
-        li a3, 0 #inteiro
+        li a3, 0 #acumulador
 
         1:
             ecall #lendo o caractere, que está em a1
             lb t2, 0(a1) #carregando o caractere
+
+            bne t2, t0, 1f #sai se t2 == ' '
+
             addi t2, t2, -'0' #transformando em inteiro
 
             mul a3, a3, t1 #a3 *= 10
             add a3, a3, t2 #a3 += t2
 
-            bne t2, t0, 1b #volta pro loop se t2 
+            j 1b
 
         1:
+
+        sw a3, 0(s3) #guardando a largura na largura
+        li t0, '\n' #novo comparador
+        li a3, 0 #novo acumulador
+
+        1:
+            ecall #lendo o caractere, que está em a1
+            lb t2, 0(a1) #carregando o caractere
+
+            bne t2, t0, 1f #sai se t2 == '\n'
+
+            addi t2, t2, -'0' #transformando em inteiro
+
+            mul a3, a3, t1 #a3 *= 10
+            add a3, a3, t2 #a3 += t2
+
+            j 1b
+
+        1:
+
+        sw a3, 4(s3) #guardando a altura
         
-        
 
-    
-
-
-
-
-    
-
-
-
-    
