@@ -1,10 +1,9 @@
 .data
     inputFile: .asciz "image.pgm"
     matrix: .word -1, -1, -1, -1, 8, -1, -1, -1, -1
-
-.bss 
-    image: .skip 263000
     fimage: .skip 263000
+    image: .skip 263000
+.bss 
     dimentions: .word 0, 0 #largura, altura
     char: .skip 1
     lixo: .skip 4
@@ -82,7 +81,7 @@ imageRead:
         mul a2, t0, t1 #a2 = largura x altura
         la a1, image
         mv a0, s0
-        ecall #leu toda a imagem, supostamente
+        ecall #leu toda a imagem
 
         mv a0, s0
         li a7, 57 #syscall para fechar arquivo
@@ -91,71 +90,38 @@ imageRead:
 
 
 apllyFilter:#s0 = &Min, s1 = &dimentions, s2 = &Mout
-    la s3, matrix #w
-    lw a0, 0(s1) #a0 = largura
-    lw a1, 4(s1) #a1 = altura
+    addi sp, sp, -4
+    sw ra, 0(sp)
 
-    #s0 = Min[0][0] início
-    add s2, s2, a0 #Mout[0][1]
-    addi s2, s2, 1 #s2 = Mout[1][1]
-
-    addi a2, a0, -1 #a2 = largura - 1
-    addi a3, a1, -1 #a3 = altura - 1
-
-    li t0, 1 #i = 0
-    1: #fori
-        li t1, 1 #j = 0
-        2: #forj
-
-            #aplicando filtro no elemento
-            mv a4, s0 #copiando a4 = Min[i - 1][j - 1] 
-            mv a5, s3 #a5 = w[0][0]
-
-            li a6, 0 #acumulador
-            li t4, 3 #tamanho filtro
-
-            li t2, 0 #k = 0
-            3: #fork
-                li t3, 0 #q = 0
-                4: #forq
-                    lw t5, 0(a5) #filtro[k][q]
-                    lbu t6, 0(a4) #Min[i + k - 1][j + q - 1]
-                    mul t5, t5, t6 #w[k][q]*Min[i + k - 1][j + q - 1]
-                    add a6, a6, t5 #a6 += w[k][q]*Min[i + k - 1][j + q - 1]
-
-                    addi t3, t3, 1 #q += 1
-                    addi a5, a5, 4 #w[k][q+1]
-                    addi a4, a4, 1 #Min[i + k - 1][i + q]
-                    blt t3, t4, 4b #vai pra 4 se q < 3
-
-                addi a4, a4, -3 # Min[i + k - 1][j - 1]
-                add a4, a4, a0 #Min[i + k][j - 1]
-                addi t2, t2, 1 #k + =1
-                blt t2, t4, 3b
+    la t0, s1
+    lw s3, 0(t0) #largura = s3
+    lw s4, 4(t0) #altura = s4
+    la s5, matrix #s5 = w
 
 
-            #a6 está com o valor
-            li t2, 255 #comparador
-            blt zero, a6, 3f #se 0 < a6, pula
-            mv a6, zero #se não a6 == 0
+    addi t2, a0, -1 #t2 = largura - 1
+    addi t3, a1, -1 #t3 = altura - 1
 
-            3:
-            bge t2, a6, 3f #se 255 >= a6, pula
-            mv a6, t2 #se não a6 == 255
+    li t0, 0 #y
+    loopy: #fory
+        li t1, 0
 
-            3:
-            sb a6, 0(s2) #salvando a6 em Mout[i][j]
-            addi s2, s2, 1 #Mout[i][j + 1]
-            addi t1, t1, 1 #j += 1
-            addi s0, s0, 1 #Min[i][j + 1]
+        loopx: #forx
+            beq t0, zero, 1f
+            beq t0, a1, 1f
+            beq t1, a0, 1f
+            beq t1, zero, 1f
+            j 2f
 
-            blt t1, a2, 2b #se j < largura - 1, volta pra forj
-        
-        addi s2, s2, 2 #Mout[i + 1][j]
-        addi s0, s0, 2 #Min[i + 1][j]
-        addi t0, t0, 1 #i += 1
-        blt t0, a3, 1b #se i < altura - 1, volta para fori
+            1:
+            sb zero, 0(s2)
+
+            2:
+            
     
+
+    lw ra, 0(sp)
+    addi sp, sp, 4
     ret
 
 imagePrint: #s1 = &dimentions, s0 = &image
