@@ -1,6 +1,7 @@
 .data
     inputFile: .asciz "image.pgm"
     matrix: .word -1, -1, -1, -1, 8, -1, -1, -1, -1
+
 .bss 
     image: .skip 263000
     fimage: .skip 263000
@@ -88,44 +89,6 @@ imageRead:
         ecall #fecha o arquivo de imagem
         ret
 
-createBlackBorder:#s0 = &imagem, s1 = &dimentions
-    mv a0, s0 #imagem
-    lw a1, 0(s1) #largura
-    lw a2, 4(s1) #altura
-
-    li t0, 0 #x
-
-    1: #preto para y = 0
-        sb zero, 0(a0)
-        addi a0, a0, 1 #proximo pixel
-        addi t0, t0, 1 #x += 1
-        blt t0, a1, 1b
-    
-    
-    li t1, 1 #y = 1
-    addi t3, a1, -1 #t3 = largura - 1
-    addi t4, a2, -1 #t4 = altura -1
-    
-
-    1: #preto para  1 <= y < altura - 1 e x = 0 ou x = largura - 1
-        sb zero, 0(a0) #m[0][y] = 0
-        add a0, a0, t3 #pula largura - 1 em x
-        sb zero, 0(a0) #m[largura - 1][y] = 0
-
-        addi a0, a0, 1 #m[0][y+1]
-        addi t1, t1, 1 #y += 1
-        blt t1, t4, 1b #volta pra 1 se y < altura - 1
-    
-    #y = altura - 1
-    li t0, 0 #x = 0
-    
-    1: #preto para y = altura - 1
-        sb zero, 0(a0)
-        addi a0, a0, 1
-        addi t0, t0, 1
-        blt t0, a1, 1b
-    
-    ret
 
 apllyFilter:#s0 = &Min, s1 = &dimentions, s2 = &Mout
     la s3, matrix #w
@@ -139,10 +102,11 @@ apllyFilter:#s0 = &Min, s1 = &dimentions, s2 = &Mout
     addi a2, a0, -1 #a2 = largura - 1
     addi a3, a1, -1 #a3 = altura - 1
 
-    li t0, 1 #i = 1
+    li t0, 1 #i = 0
     1: #fori
-        li t1, 1
+        li t1, 1 #j = 0
         2: #forj
+
             #aplicando filtro no elemento
             mv a4, s0 #copiando a4 = Min[i - 1][j - 1] 
             mv a5, s3 #a5 = w[0][0]
@@ -169,6 +133,7 @@ apllyFilter:#s0 = &Min, s1 = &dimentions, s2 = &Mout
                 addi t2, t2, 1 #k + =1
                 blt t2, t4, 3b
 
+
             #a6 está com o valor
             li t2, 255 #comparador
             blt zero, a6, 3f #se 0 < a6, pula
@@ -186,7 +151,7 @@ apllyFilter:#s0 = &Min, s1 = &dimentions, s2 = &Mout
 
             blt t1, a2, 2b #se j < largura - 1, volta pra forj
         
-        addi s2, s2, 2 #Mout[i +1][j]
+        addi s2, s2, 2 #Mout[i + 1][j]
         addi s0, s0, 2 #Min[i + 1][j]
         addi t0, t0, 1 #i += 1
         blt t0, a3, 1b #se i < altura - 1, volta para fori
@@ -237,11 +202,9 @@ _start:
     jal imageRead
     #s1 está dimenstions
     la s0, image #s0 = &image
-    debug:
-    jal createBlackBorder #criar borda preta -> s0 -> &imagem, mas com a borda preta
-    debug1:
     la s2, fimage #s2 = &fimage
-    jal apllyFilter #filtro asplicado na fimage, s2 foi estragado
+
+    jal apllyFilter #filtro aplicado na fimage, s2 foi estragado
 
     la s0, fimage #imagem com filtro
     jal imagePrint
