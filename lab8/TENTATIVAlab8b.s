@@ -93,7 +93,7 @@ conv: #a0 = Ponteiro p Min, a1 = Largura de Min
 
     li t2, 0 #acumulador
 
-    sub a0, a0, a2 #Min desce uma linha
+    sub a0, a0, a1 #Min desce uma linha
     addi a0, a0, -1 #Min desce uma coluna -> 0,0
 
     li t4, 0 #iterador
@@ -106,18 +106,19 @@ conv: #a0 = Ponteiro p Min, a1 = Largura de Min
         addi a0, a0, 1 #proxima coluna
         blt t4, t3, 1b
     
+    debug:
+
     addi a0, a0, -1 #volta uma coluna
     add a0, a0, a1 #sobe uma linha
 
     lbu t1, 0(a0) #extrai valor
-    add t2, t1, t1 #soma em t2
+    add t2, t2, t1 #soma em t2
 
     add a0, a0, -2 #volta 2 colunas
     lbu t1, 0(a0) #extrai valor
-    add t2, t1, t1 #soma em t2
+    add t2, t2, t1 #soma em t2
 
     add a0, a0, a1 #sobe uma linha
-
 
     li t4, 0
     1:
@@ -131,20 +132,18 @@ conv: #a0 = Ponteiro p Min, a1 = Largura de Min
     neg t2, t2 #troca o sinal
     add t0, t0, t2 #soma com t0 e guarda em t0
 
-    li t1, 0xff #t1 = 255
+    li t1, 255 #t1 = 255
 
-    blt t0, t1, 1f #se for menor que 255, pula
+    blt t0, t1, 2f #se for menor que 255, pula
     mv a0, t1
 
-    1:
-    bge t0, zero, 1f #se for maior ou igual a zero, pula
+    2:
+    bge t0, zero, 3f #se for maior ou igual a zero, pula
     mv a0, zero
 
-    1:
+    3:
     mv a0, t0
     ret
-
-
 
 apllyFilter:#s0 = &Min, s1 = &dimentions, s2 = &Mout
     addi sp, sp, -4
@@ -173,7 +172,7 @@ apllyFilter:#s0 = &Min, s1 = &dimentions, s2 = &Mout
 
             2:
             mv a0, s0 #a0 = s0 (ponteiro para Min)
-            mv a2, s3 #largura de Min
+            mv a1, s3 #largura de Min
             jal conv
             sb a0, 0(s2) #guarda na resposta
 
@@ -236,9 +235,6 @@ _start:
     la s0, image #s0 = &image
     la s1, dimentions #s1 = &dimentions
     la s2, fimage #s2 = &fimage
-
-    debug:
-
 
     jal apllyFilter #filtro aplicado na fimage, s2 foi estragado
 
